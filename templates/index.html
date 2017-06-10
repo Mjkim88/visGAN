@@ -63,7 +63,7 @@
         return d[1];
     }));
 
-
+// plot element
     var svg = d3.select("#plot").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -100,7 +100,6 @@
         .on("mouseover", ShowImg)
         .on("mouseout",  RemoveImg)
 
-// attribute of the legend
     var legend = svg.selectAll(".legend")
         .data(color.domain())
         .enter().append("g")
@@ -124,7 +123,7 @@
             return d;
         });
 
-// imageset pallete
+ // imageset pallete element
     var imageset = d3.select("#imageset").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height/2 + margin.top + margin.bottom)
@@ -132,8 +131,6 @@
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
-    // var canvas = imageset;
     imageset.append("image")
             .attr("x",  50 +  width / 4 * 0.53)
             .attr("y", height/4 - 45)
@@ -154,7 +151,6 @@
             .attr("height", 28*3)
             .attr("width", 28*3)
             .attr("xlink:href", "../static/src/images/equal.png");
-
 
     var iter = 0;
     var t = d3.timer(function(elapsed) {
@@ -240,7 +236,7 @@
         return canv;
     }
 
-// When click or mouseover the dot
+// When mouseover a dot
     function ShowImg(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
         var img_eval = '<img src=' + canv + ' alt="Mountain View" style="width:120px;height:120px;margin:5px;">';
@@ -254,12 +250,12 @@
 
     };
 
-        
+// When mouseout a dot   
     function RemoveImg(d, i){
         svg.select("image").remove()
     };
 
-
+// When click a "remove image" button
     function RemoveSelectedImg(d, i){
         if (numimage > 0)
         {
@@ -270,7 +266,7 @@
             }
         }
     };
-
+// When click a dot
     function SelectVector(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
 
@@ -286,7 +282,7 @@
     };
 
     </script>
-    <div  class="button"> <button type="button" onClick="RemoveSelectedImg();"> Remove Images </button>
+    <div  class="button"> <button type="button" onClick="RemoveSelectedImg();"> Remove Image </button>
     </div>
 </body>
 
