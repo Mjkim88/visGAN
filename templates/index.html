@@ -3,7 +3,6 @@
 <script src="./static/javascript/lib/d3/d3.js"></script>
 <script src="./static/javascript/tsne.js"></script>
 <script src="./static/javascript/numjs.js"></script>
-<script src="./static/javascript/dragselect.js"></script>
 <link type="text/css" href="http://mbostock.github.io/d3/style.css" rel="stylesheet" />
 <link rel="stylesheet" href="../static/css/style.css" />
 <div class="header">
@@ -31,6 +30,7 @@
     var xAxis = d3.axisBottom(x);
     var yAxis = d3.axisLeft(y);
     var numimage  = 0;
+    
 
     var data = {{ data | tojson}};
 
@@ -38,13 +38,31 @@
 
     var pixel = [];
     var label = [];
-    // var z = [];
+    var z = [];
 
     data.forEach(function(d, i) {
-        label.push(d.Label);
-        pixel.push(d.Pixels);
-        // z.push(d.z);
+        // label.push(d.Label);
+        // pixel.push(d.Pixels);
+        label.push(d.label);
+        pixel.push(d.fake_image);
+        z.push(d.z);
     });
+
+    var zeros = function(n) {
+        if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+        if(typeof ArrayBuffer === 'undefined') {
+          // lacking browser support
+          var arr = new Array(n);
+          for(var i=0;i<n;i++) { arr[i]= 0; }
+          return arr;
+        } else {
+          return new Float64Array(n); // typed arrays are faster
+        }
+    }
+
+    var N = z[0].length;
+    var new_z  = zeros(N);
+    var select_idx = [];
 
     // t-sne
     var opt = {};
@@ -63,7 +81,7 @@
         return d[1];
     }));
 
-// plot element
+
     var svg = d3.select("#plot").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -85,7 +103,7 @@
         .data(data)
         .enter().append("circle")
         .attr("class", "dot")
-        .attr("r", 10)
+        .attr("r", 5)
         .attr("opacity", 0.5)
         .attr("cx", function(d) {
             return x(d[0]);
@@ -100,6 +118,7 @@
         .on("mouseover", ShowImg)
         .on("mouseout",  RemoveImg)
 
+// attribute of the legend
     var legend = svg.selectAll(".legend")
         .data(color.domain())
         .enter().append("g")
@@ -123,7 +142,7 @@
             return d;
         });
 
- // imageset pallete element
+// imageset pallete
     var imageset = d3.select("#imageset").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height/2 + margin.top + margin.bottom)
@@ -131,6 +150,8 @@
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+
+    // var canvas = imageset;
     imageset.append("image")
             .attr("x",  50 +  width / 4 * 0.53)
             .attr("y", height/4 - 45)
@@ -152,6 +173,7 @@
             .attr("width", 28*3)
             .attr("xlink:href", "../static/src/images/equal.png");
 
+
     var iter = 0;
     var t = d3.timer(function(elapsed) {
         update();
@@ -160,7 +182,7 @@
 
 // tsne update
     function update() {
-        if (iter > 10) t.stop();
+        if (iter > 500) t.stop();
 
         tsne.step();
         data = tsne.getSolution();
@@ -190,7 +212,7 @@
 
 // turn raw pixel value into the image
     var getImgFromArray = function(L, scale) {
-        var A = nj.float64(L).reshape(28, 28, 1);
+        var A = nj.float64(L).reshape(64, 64, 3);
         var depth = A.shape[2];
         var sx = A.shape[0];
         var sy = A.shape[1];
@@ -236,7 +258,7 @@
         return canv;
     }
 
-// When mouseover a dot
+// When click or mouseover the dot
     function ShowImg(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
         var img_eval = '<img src=' + canv + ' alt="Mountain View" style="width:120px;height:120px;margin:5px;">';
@@ -250,25 +272,40 @@
 
     };
 
-// When mouseout a dot   
+        
     function RemoveImg(d, i){
         svg.select("image").remove()
     };
 
-// When click a "remove image" button
-    function RemoveSelectedImg(d, i){
+
+    function RemoveSelectedImg(z, select_idx){
+        var  i  = select_idx[select_idx.length - 1];
+        console.log(i);
         if (numimage > 0)
         {
             d3.selectAll("image:last-child").remove()
+            if (numimage == 3){
+                console.log("plus");
+                for (var j=0;j<N;j++) {
+                    new_z[j] += z[i][j];
+                }
+                select_idx.pop(i);
+                console.log(select_idx);
+            } else{
+                console.log("minus");
+                for (var j=0;j<N;j++) {
+                    new_z[j] -= z[i][j];
+                }
+                select_idx.pop(i);
+                console.log(select_idx);
+            };
             numimage -= 1;
-            if (numimage<0){
-                numimage = 0;
-            }
         }
     };
-// When click a dot
+
     function SelectVector(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
+        console.log(i);
 
         if (numimage < 3){
             imageset.append("svg:image")
@@ -277,12 +314,35 @@
             .attr('x', 50 +  width / 4 * numimage)
             .attr('y', height/4 - 50)
             .attr("xlink:href", canv);
+
+            if (numimage == 0 || numimage  == 1){
+                console.log("plus");
+                for (var j=0;j<N;j++) {
+                    new_z[j] += z[i][j];
+                }
+                select_idx.push(i);
+                console.log(select_idx);
+            } else{
+                console.log("minus");
+                for (var j=0;j<N;j++) {
+                    new_z[j] -= z[i][j];
+                }
+                select_idx.push(i);
+                console.log(select_idx);
+            };
             numimage += 1;
         }
     };
 
+    function GenerateImg(){
+
+    }
+
     </script>
-    <div  class="button"> <button type="button" onClick="RemoveSelectedImg();"> Remove Image </button>
+    <div  class="button" align="center"> 
+    <button type="button" onClick="RemoveSelectedImg(z, select_idx);" > Remove Images </button>
+    <button type="button" onClick="GenerateImg();" > Generate Images </button>
+    
     </div>
 </body>
 
