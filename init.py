@@ -8,8 +8,6 @@ socketio = SocketIO(app)
 
 with open('./t10k.json') as file:
 	data = json.load(file)
-	data = data[0:10]
-	print len(data)
 	file.close()
 
 @app.route('/')
