@@ -1,5 +1,5 @@
 # VisGAN
-Visualizing high dimensional z vector computed from GAN
+Visualizing high dimensional z vectors computed from GAN
 
 ## To run 
 Issue the command:
