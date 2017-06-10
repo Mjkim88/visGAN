@@ -95,15 +95,15 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
       }
     }
 
-    // for(var i=0;i<N;i++) {
-    //   for(var j=i+1;j<N;j++) {
-    //     if (label[i] == label[j]){
-    //       dist[i*N+j] = dist[i*N+j] * 0.8;
-    //       dist[j*N+i] = dist[j*N+i] * 0.8;
-    //     }
+    for(var i=0;i<N;i++) {
+      for(var j=i+1;j<N;j++) {
+        if (label[i] == label[j]){
+          dist[i*N+j] = dist[i*N+j] * 0.5;
+          dist[j*N+i] = dist[j*N+i] * 0.5;
+        }
         
-    //   }
-    // }
+      }
+    }
 
     return dist;
   }

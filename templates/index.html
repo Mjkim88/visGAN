@@ -3,6 +3,10 @@
 <script src="./static/javascript/lib/d3/d3.js"></script>
 <script src="./static/javascript/tsne.js"></script>
 <script src="./static/javascript/numjs.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.2.1.js"
+  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+  crossorigin="anonymous"></script>
 <link type="text/css" href="http://mbostock.github.io/d3/style.css" rel="stylesheet" />
 <link rel="stylesheet" href="../static/css/style.css" />
 <div class="header">
@@ -16,6 +20,9 @@
     </div>
 
     <script>
+
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
     var margin = {top: 20, right: 20, bottom: 30, left: 40},
             width = 960 - margin.left - margin.right,
             height = 500 - margin.top - margin.bottom;
@@ -242,7 +249,6 @@
             for (var x = 0; x < sx; x++) {
                 for (var y = 0; y < sy; y++) {
                     var dval = Math.floor((A.get(y, x, d) - minv) / mmdv * 255);
-
                     for (var dx = 0; dx < s; dx++) {
                         for (var dy = 0; dy < s; dy++) {
                             var pp = ((W * (y * s + dy)) + (dx + x * s)) * 4;
@@ -278,7 +284,7 @@
     };
 
 
-    function RemoveSelectedImg(z, select_idx){
+    function RemoveSelectedImg(z){
         var  i  = select_idx[select_idx.length - 1];
         console.log(i);
         if (numimage > 0)
@@ -306,7 +312,6 @@
     function SelectVector(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
         console.log(i);
-
         if (numimage < 3){
             imageset.append("svg:image")
             .attr('width', 28*3.5)
@@ -335,13 +340,37 @@
     };
 
     function GenerateImg(){
+        $.getJSON($SCRIPT_ROOT+'/generate_image', {
+            new_z: JSON.stringify(new_z)
+            },function(data){
+                console.log(data.generated_image)
+                if (numimage == 3){
+                    var canv = getImgFromArray(data.generated_image, 2).toDataURL();
+                    imageset.append("svg:image")
+                    .attr('width', 28*3.5)
+                    .attr('height', 28*3.5)
+                    .attr('x', 50 +  width / 4 * 3)
+                    .attr('y', height/4 - 50)
+                    .attr("xlink:href", canv);
+                    numimage += 1
+                }
+            }
+    )}
 
+    function RemoveAll(){
+        d3.selectAll("image:last-child").remove()
+        d3.selectAll("image:last-child").remove()
+        d3.selectAll("image:last-child").remove()
+        d3.selectAll("image:last-child").remove()
+        numimage =  0
     }
 
     </script>
     <div  class="button" align="center"> 
-    <button type="button" onClick="RemoveSelectedImg(z, select_idx);" > Remove Images </button>
-    <button type="button" onClick="GenerateImg();" > Generate Images </button>
+    <button type="button" onClick="RemoveSelectedImg(z);" > Remove Image </button>
+    <button type="button" onClick="RemoveAll();" > Remove All </button>
+    <button type="button" onClick="GenerateImg();" > Generate Image </button>
+    
     
     </div>
 </body>
