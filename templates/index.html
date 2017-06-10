@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="./static/javascript/lib/d3/d3.js"></script>
+<script src="./static/javascript/tsne.js"></script>
+<script src="./static/javascript/numjs.js"></script>
+<script src="./static/javascript/dragselect.js"></script>
+<link type="text/css" href="http://mbostock.github.io/d3/style.css" rel="stylesheet" />
+<link rel="stylesheet" href="../static/css/style.css" />
+<div class="header">
+    <div> Visualizing GAN </div>
+</div> 
+<body>
+
+    <div id="plot" align="center">
+    </div>
+    <div id="imageset" align="center">
+    </div>
+
+    <script>
+    var margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+    var x = d3.scaleLinear()
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    var xAxis = d3.axisBottom(x);
+    var yAxis = d3.axisLeft(y);
+    var numimage  = 0;
+
+    var data = {{ data | tojson}};
+
+    data = data.slice(0, 1000);
+
+    var pixel = [];
+    var label = [];
+    // var z = [];
+
+    data.forEach(function(d, i) {
+        label.push(d.Label);
+        pixel.push(d.Pixels);
+        // z.push(d.z);
+    });
+
+    // t-sne
+    var opt = {};
+    opt.epsilon = 10;
+    opt.perplexity = 30;
+    opt.dim = 2;
+    var tsne = new tsnejs.tSNE(opt);
+    tsne.initDataRaw(pixel, label);
+    data = tsne.getSolution();
+
+
+    x.domain(d3.extent(data, function(d) {
+        return d[0];
+    }));
+    y.domain(d3.extent(data, function(d) {
+        return d[1];
+    }));
+
+
+    var svg = d3.select("#plot").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr("align", "center")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+    svg.append('g')
+        .selectAll(".dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 10)
+        .attr("opacity", 0.5)
+        .attr("cx", function(d) {
+            return x(d[0]);
+        })
+        .attr("cy", function(d) {
+            return y(d[1]);
+        })
+        .style("fill", function(d, i) {
+            return color(label[i]);
+        })
+        .on("click", SelectVector)
+        .on("mouseover", ShowImg)
+        .on("mouseout",  RemoveImg)
+
+// attribute of the legend
+    var legend = svg.selectAll(".legend")
+        .data(color.domain())
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) {
+            return "translate(0," + i * 20 + ")";
+        });
+
+    legend.append("rect")
+        .attr("x", width - 18)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", color);
+
+    legend.append("text")
+        .attr("x", width - 24)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "end")
+        .text(function(d) {
+            return d;
+        });
+
+// imageset pallete
+    var imageset = d3.select("#imageset").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height/2 + margin.top + margin.bottom)
+        .attr("align", "center")
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    // var canvas = imageset;
+    imageset.append("image")
+            .attr("x",  50 +  width / 4 * 0.53)
+            .attr("y", height/4 - 45)
+            .attr("height", 28*3)
+            .attr("width", 28*3)
+            .attr("xlink:href", "../static/src/images/plus.png");
+
+    imageset.append("image")
+            .attr("x",  50 +  width / 4 * 1.53)
+            .attr("y", height/4 - 45)
+            .attr("height", 28*3)
+            .attr("width", 28*3)
+            .attr("xlink:href", "../static/src/images/minus.png");
+
+    imageset.append("image")
+            .attr("x",  50 +  width / 4 * 2.53)
+            .attr("y", height/4 - 45)
+            .attr("height", 28*3)
+            .attr("width", 28*3)
+            .attr("xlink:href", "../static/src/images/equal.png");
+
+
+    var iter = 0;
+    var t = d3.timer(function(elapsed) {
+        update();
+        iter++;
+    });
+
+// tsne update
+    function update() {
+        if (iter > 10) t.stop();
+
+        tsne.step();
+        data = tsne.getSolution();
+
+        x.domain(d3.extent(data, function(d) {
+            return d[0];
+        })).nice();
+        y.domain(d3.extent(data, function(d) {
+            return d[1];
+        })).nice();
+
+        svg.selectAll("g.y.axis")
+            .call(yAxis);
+        svg.selectAll("g.x.axis")
+            .call(xAxis);
+
+        svg.selectAll('.dot')
+            .data(data)
+            .attr("cx", function(d) {
+                return x(d[0]);
+            })
+            .attr("cy", function(d) {
+                return y(d[1]);
+            });
+    }
+
+
+// turn raw pixel value into the image
+    var getImgFromArray = function(L, scale) {
+        var A = nj.float64(L).reshape(28, 28, 1);
+        var depth = A.shape[2];
+        var sx = A.shape[0];
+        var sy = A.shape[1];
+
+        var s = scale || 2; // scale
+        var rangeA = nj.float64(L);
+        var minv = rangeA.min();
+        var maxv = rangeA.max();
+        var mmdv = maxv - minv;
+
+        if (sx != 1) {
+            minv = A.min();
+            maxv = A.max();
+            mmdv = maxv - minv;
+        }
+
+        var canv = document.createElement('canvas');
+        canv.className = 'actmap';
+        var W = sx * s;
+        var H = sy * s;
+        canv.width = W;
+        canv.height = H;
+        var ctx = canv.getContext('2d');
+        var g = ctx.createImageData(W, H);
+
+        for (var d = 0; d < 3; d++) {
+            for (var x = 0; x < sx; x++) {
+                for (var y = 0; y < sy; y++) {
+                    var dval = Math.floor((A.get(y, x, d) - minv) / mmdv * 255);
+
+                    for (var dx = 0; dx < s; dx++) {
+                        for (var dy = 0; dy < s; dy++) {
+                            var pp = ((W * (y * s + dy)) + (dx + x * s)) * 4;
+                            g.data[pp + d] = dval;
+                            if (d === 0) g.data[pp + 3] = 255; // alpha channel
+                        }
+                    }
+                }
+            }
+        }
+
+        ctx.putImageData(g, 0, 0);
+        return canv;
+    }
+
+// When click or mouseover the dot
+    function ShowImg(d, i){
+        var canv = getImgFromArray(pixel[i], 2).toDataURL();
+        var img_eval = '<img src=' + canv + ' alt="Mountain View" style="width:120px;height:120px;margin:5px;">';
+
+        svg.append("svg:image")
+        .attr('width', 28*3)
+        .attr('height', 28*3)
+        .attr('x',  d3.select(this).attr("cx")-14*6)
+        .attr('y',  d3.select(this).attr("cy")-14*6)
+        .attr("xlink:href", canv);
+
+    };
+
+        
+    function RemoveImg(d, i){
+        svg.select("image").remove()
+    };
+
+
+    function RemoveSelectedImg(d, i){
+        if (numimage > 0)
+        {
+            d3.selectAll("image:last-child").remove()
+            numimage -= 1;
+            if (numimage<0){
+                numimage = 0;
+            }
+        }
+    };
+
+    function SelectVector(d, i){
+        var canv = getImgFromArray(pixel[i], 2).toDataURL();
+
+        if (numimage < 3){
+            imageset.append("svg:image")
+            .attr('width', 28*3.5)
+            .attr('height', 28*3.5)
+            .attr('x', 50 +  width / 4 * numimage)
+            .attr('y', height/4 - 50)
+            .attr("xlink:href", canv);
+            numimage += 1;
+        }
+    };
+
+    </script>
+    <div  class="button"> <button type="button" onClick="RemoveSelectedImg();"> Remove Images </button>
+    </div>
+</body>
+
+  
+
+  

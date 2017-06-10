@@ -1,0 +1,24 @@
+body{
+    font: 10px sans-serif;
+    background-image: url("../src/images/texture-noise.png");
+/*    background-image: url("../static/src/images/background.jpg");*/
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.header {
+    width: 100%;
+    text-align: center;
+    margin: 2% 0;
+    font-size: 400%;
+    font-family: "Times New Roman", Times, serif;
+}
+
+.button {
+    text-align: center;
+}
