@@ -29,7 +29,6 @@ def denorm(x):
     x = (x + 1) / 2
     return x.clamp(0, 1)
 
-
 @app.route('/')
 def form():
 	return render_template('index.html', data=data)
@@ -37,7 +36,7 @@ def form():
 @app.route('/generate_image')
 def generate_image():
 	z = json.loads(request.args.get('new_z'))
-	z = to_var(z.values())
+	z = to_var(z)
 	if z.dim() == 1:
 			z = z.unsqueeze(0)
 	fake_image = g(z)
@@ -47,4 +46,4 @@ def generate_image():
 
 # Execute the main program
 if __name__ == '__main__':
-	socketio.run(app, host='0.0.0.0', port=8400, debug=True)
+	socketio.run(app, host='0.0.0.0', port=7800, debug=True)

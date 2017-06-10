@@ -1,7 +1,6 @@
 body{
     font: 10px sans-serif;
     background-image: url("../src/images/texture-noise.png");
-/*    background-image: url("../static/src/images/background.jpg");*/
 }
 
 .axis path,
@@ -16,7 +15,8 @@ body{
     text-align: center;
     margin: 2% 0;
     font-size: 400%;
-    font-family: "Times New Roman", Times, serif;
+    /*font-family: "Times New Roman", Times, serif*/
+    font-weight: bold;
 }
 
 .button {
