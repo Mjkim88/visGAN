@@ -54,8 +54,9 @@ def generate_image():
 		z3 = json.loads(request.args.get('new_z3'))
 		z4 = json.loads(request.args.get('new_z4'))
 		fake_image = interpolate(z1, z2, z3, z4)
+		print len(fake_image)
 	return json.dumps({'generated_image': fake_image})
 
 # Execute the main program
 if __name__ == '__main__':
-	socketio.run(app, host='0.0.0.0', port=6700, debug=True)
+	socketio.run(app, host='0.0.0.0', port=2500, debug=True)

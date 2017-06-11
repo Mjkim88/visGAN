@@ -17,6 +17,7 @@ def slerp(val, low, high):
     so = np.sin(omega)
     print 'low', low
     print 'high',high
+    print 'high', len(high)
     if so == 0:
         return (1.0-val) * low + val * high # L'Hopital's rule/LERP
     print 'val', val
@@ -28,19 +29,18 @@ def interpolate(z1, z2, z3, z4, n=6):
     z1 = np.asarray(z1).astype(np.float32)       # 1D vector of shape [100].
     z2 = np.asarray(z2).astype(np.float32)
     z3 = np.asarray(z3).astype(np.float32)
-    z3 = np.asarray(z4).astype(np.float32)
+    z4 = np.asarray(z4).astype(np.float32)
     print type(z3)
+    print 'z1', z1
     print z3.shape
-    print z3
-    print 
+    print 'z3', z3
     z_left = []
     z_right = []
     for ratio in np.linspace(0, 1, n):
+        print "first slert"
         z_left.append(slerp(ratio, z1, z2)) 
-        print "ratio", ratio
+        print "second slert"
         z_right.append(slerp(ratio, z3, z4))
-        print "done========================================"
-        print ratio
     zs = []
     for z_l, z_r in zip(z_left, z_right):
         for ratio in np.linspace(0, 1, n):
