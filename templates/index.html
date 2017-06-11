@@ -11,16 +11,17 @@
 <link rel="stylesheet" href="../static/css/style.css" />
 <div class="header">
     <div> Visualizing GAN </div>
+    
 </div> 
 <body>
-
+    
     <div id="plot" align="center">
     </div>
     <div id="imageset" align="center">
     </div>
+    
 
     <script>
-
     $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
     var margin = {top: 20, right: 20, bottom: 30, left: 40},
@@ -37,7 +38,8 @@
     var xAxis = d3.axisBottom(x).ticks(4);
     var yAxis = d3.axisLeft(y).ticks(4);
     var numimage  = 0;
-
+    var operation = 2; // 0: arithmetic operation, 1: vertor interpolation
+    var interpolation_result = 0;
     var data = {{ data | tojson}};
 
     data = data.slice(0, 1000);
@@ -63,7 +65,14 @@
 
     var N = z[0].length;
     var new_z = new Array(N);
-    for(var i=0;i<N;i++) { new_z[i]= 0; }
+    for(var i=0;i<N;i++) {new_z[i]= 0;}
+    var new_z2 = new Array(N);
+    for(var i=0;i<N;i++) {new_z2[i]= 0;}
+    var new_z3 = new Array(N);
+    for(var i=0;i<N;i++) {new_z3[i]= 0;}
+    var new_z4 = new Array(N);
+    for(var i=0;i<N;i++) {new_z4[i]= 0;}
+
     var select_idx = [];
 
     x.domain(d3.extent(data, function(d) {
@@ -139,34 +148,14 @@
 // imageset pallete
     var imageset = d3.select("#imageset").append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height/2 + margin.top + margin.bottom)
+        .attr("height", height/2 - margin.top + margin.bottom)
         .attr("align", "center")
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 
     // var canvas = imageset;
-    imageset.append("image")
-            .attr("x",  50 +  width / 4 * 0.53)
-            .attr("y", height/4 - 45)
-            .attr("height", 28*3)
-            .attr("width", 28*3)
-            .attr("xlink:href", "../static/src/images/minus.png");
-
-    imageset.append("image")
-            .attr("x",  50 +  width / 4 * 1.53)
-            .attr("y", height/4 - 45)
-            .attr("height", 28*3)
-            .attr("width", 28*3)
-            .attr("xlink:href", "../static/src/images/plus.png");
-
-    imageset.append("image")
-            .attr("x",  50 +  width / 4 * 2.53)
-            .attr("y", height/4 - 45)
-            .attr("height", 28*3)
-            .attr("width", 28*3)
-            .attr("xlink:href", "../static/src/images/equal.png");
-
+    
 
     var iter = 0;
     var t = d3.timer(function(elapsed) {
@@ -176,7 +165,7 @@
 
 // tsne update
     function update() {
-        if (iter > 500) t.stop();
+        if (iter > 10) t.stop();
 
         tsne.step();
         data = tsne.getSolution();
@@ -205,7 +194,8 @@
 
 
 // turn raw pixel value into the image
-    var getImgFromArray = function(L, scale) {
+    var getImgFromArray = function(L, scale, interpolation_result) {
+        // if (interpolation_result==1){}
         var A = nj.float64(L).reshape(64, 64, 3);
         var depth = A.shape[2];
         var sx = A.shape[0];
@@ -240,7 +230,7 @@
                         for (var dy = 0; dy < s; dy++) {
                             var pp = ((W * (y * s + dy)) + (dx + x * s)) * 4;
                             g.data[pp + d] = dval;
-                            if (d === 0) g.data[pp + 3] = 255; // alpha channel
+                            if (d === 0) g.data[ pp + 3] = 255; // alpha channel
                         }
                     }
                 }
@@ -250,6 +240,48 @@
         ctx.putImageData(g, 0, 0);
         return canv;
     }
+
+
+     function Arithmetic(){
+        operation  = 0;
+        RemoveAll();
+        console.log(operation);
+        imageset.append("image")
+                .attr("x",  50 +  width / 4 * 0.53)
+                .attr("y", height/4 - 45)
+                .attr("height", 28*3)
+                .attr("width", 28*3)
+                .attr("xlink:href", "../static/src/images/minus.png");
+
+        imageset.append("image")
+                .attr("x",  50 +  width / 4 * 1.53)
+                .attr("y", height/4 - 45)
+                .attr("height", 28*3)
+                .attr("width", 28*3)
+                .attr("xlink:href", "../static/src/images/plus.png");
+
+        imageset.append("image")
+                .attr("x",  50 +  width / 4 * 2.53)
+                .attr("y", height/4 - 45)
+                .attr("height", 28*3)
+                .attr("width", 28*3)
+                .attr("xlink:href", "../static/src/images/equal.png");
+        numimage=3;
+        console.log(numimage);
+     };
+
+     function VectorInterpolation(){
+        RemoveAll()
+        operation = 1; 
+        imageset.append("image")
+                .attr("x", 10 + width / 7.5 * 4)
+                .attr("y", height/4 - 45)
+                .attr("height", 28*3)
+                .attr("width", 28*3)
+                .attr("xlink:href", "../static/src/images/equal.png");
+        numimage = 1;
+     };
+
 
 // When click or mouseover the dot
     function ShowImg(d, i){
@@ -274,18 +306,18 @@
     function RemoveSelectedImg(z){
         var  i  = select_idx[select_idx.length - 1];
         console.log(i);
-        if (numimage > 0)
+        if (numimage > 3)
         {
             d3.selectAll("image:last-child").remove()
 
-            if (numimage == 2){
+            if (numimage == 5){
                 console.log("plus");
                 for (var j=0;j<N;j++) {
                     new_z[j] += z[i][j];
                 }
                 select_idx.pop(i);
                 console.log(select_idx);
-            } else{ if (numimage== 1  || numimage == 3){
+            } else{ if (numimage== 4  || numimage == 6){
                 console.log("minus");
                 for (var j=0;j<N;j++) {
                     new_z[j] -= z[i][j];
@@ -294,45 +326,86 @@
                 console.log(select_idx);
             } else{console.log("nothing happen")}};
             numimage -= 1;
+            if (numimage < 3){
+                numimage = 3;
+            }
         }
     };
 
     function SelectVector(d, i){
         var canv = getImgFromArray(pixel[i], 2).toDataURL();
         console.log(i);
-        if (numimage < 3){
-            imageset.append("svg:image")
-            .attr('width', 28*3.5)
-            .attr('height', 28*3.5)
-            .attr('x', 50 +  width / 4 * numimage)
-            .attr('y', height/4 - 50)
-            .attr("xlink:href", canv);
+        if (operation == 0) {
+            console.log(operation);
+            if (2 < numimage && numimage < 6){
+                imageset.append("svg:image")
+                .attr('width', 28*3.5)
+                .attr('height', 28*3.5)
+                .attr('x', 50 +  width / 4 * (numimage-3))
+                .attr('y', height/4 - 50)
+                .attr("xlink:href", canv);
 
-            if (numimage == 0 || numimage  == 2){
-                console.log("plus");
-                for (var j=0;j<N;j++) {
-                    new_z[j] += z[i][j];
-                }
-                select_idx.push(i);
-                console.log(select_idx);
-            } else{
-                console.log("minus");
-                for (var j=0;j<N;j++) {
-                    new_z[j] -= z[i][j];
-                }
-                select_idx.push(i);
-                console.log(select_idx);
+                if (numimage == 3 || numimage  == 5){
+                    console.log("plus");
+                    for (var j=0;j<N;j++) {
+                        new_z[j] += z[i][j];
+                    }
+                    select_idx.push(i);
+                    console.log(select_idx);
+                } else{
+                    console.log("minus");
+                    for (var j=0;j<N;j++) {
+                        new_z[j] -= z[i][j];
+                    }
+                    select_idx.push(i);
+                    console.log(select_idx);
+                };
+                numimage += 1;
             };
-            numimage += 1;
-        }
+
+        }else{
+            if (operation == 1){
+                if (0 < numimage && numimage< 5){
+
+                    imageset.append("svg:image")
+                    .attr('width', 28*3)
+                    .attr('height', 28*3)
+                    .attr('x', 10 + width / 7.5 * (numimage -1))
+                    .attr('y', height/4 - 50)
+                    .attr("xlink:href", canv);
+                    select_idx.push(i);
+
+                    if (numimage == 0 ){
+                        for (var j=0;j<N;j++) {
+                            new_z[j] += z[i][j];
+                        } 
+                    } else if (numimage == 1 ){
+                        for (var j=0;j<N;j++) {
+                            new_z2[j] += z[i][j];
+                        } 
+                    } else if (numimage == 2 ){
+                        for (var j=0;j<N;j++) {
+                            new_z3[j] += z[i][j];
+                        }  
+                    } else if (numimage == 3 ){
+                        for (var j=0;j<N;j++) {
+                            new_z4[j] += z[i][j];
+                        } 
+                    };
+                    numimage += 1;
+                };
+            };
+        };
     };
 
     function GenerateImg(){
+        if (operation == 0){
         $.getJSON($SCRIPT_ROOT+'/generate_image', {
-            new_z: JSON.stringify(new_z)
+            new_z: JSON.stringify(new_z),
+            operation: JSON.stringify(operation)
             },function(data){
                 console.log(data.generated_image)
-                if (numimage == 3){
+                if (numimage == 6){
                     var canv = getImgFromArray(data.generated_image, 2).toDataURL();
                     imageset.append("svg:image")
                     .attr('width', 28*3.5)
@@ -343,7 +416,29 @@
                     numimage += 1
                 }
             }
-    )}
+        )}else{
+            $.getJSON($SCRIPT_ROOT+'/generate_image', {
+                new_z1: JSON.stringify(new_z),
+                new_z2: JSON.stringify(new_z2),
+                new_z3: JSON.stringify(new_z3),
+                new_z4: JSON.stringify(new_z4),
+                operation: JSON.stringify(operation)
+            },function(data){
+                interpolation_result = 1
+                console.log(data.generated_image)
+                if (numimage == 5){
+                    var canv = getImgFromArray(data.generated_image, 2, interpolation_result).toDataURL();
+                    imageset.append("svg:image")
+                    .attr('width', 28*3.5)
+                    .attr('height', 28*3.5)
+                    .attr('x', 50 +  width / 4 * 3)
+                    .attr('y', height/4 - 50)
+                    .attr("xlink:href", canv);
+                    numimage += 1
+                }
+                interpolation_result = 0
+            })
+        }};
 
     function RemoveAll(){
         while (numimage > 0) {
@@ -352,10 +447,19 @@
         }
         numimage =  0;
         select_idx  = [];
+        for(var i=0;i<N;i++) {new_z[i]= 0;}
+        for(var i=0;i<N;i++) {new_z2[i]= 0;}
+        for(var i=0;i<N;i++) {new_z3[i]= 0;}
+        for(var i=0;i<N;i++) {new_z4[i]= 0;}
     }
 
     </script>
-    <div  class="button" align="center"> 
+    <div  class="button2" align="center" style = "margin-right : 30px; margin-bottom: 10px"> 
+    <button type="button2" onClick="Arithmetic();" > Arithmetic operation </button>
+    <button type="button2" onClick="VectorInterpolation();" > Interpolation </button>
+    </div>
+    <div></div>
+    <div  class="button" align="center"  style = "margin-right : 30px; margin-bottom: 10px"> 
     <button type="button" onClick="RemoveSelectedImg(z);" > Remove Image </button>
     <button type="button" onClick="RemoveAll();" > Remove All </button>
     <button type="button" onClick="GenerateImg();" > Generate Image </button>

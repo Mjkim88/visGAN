@@ -15,10 +15,11 @@ body{
     text-align: center;
     margin: 2% 0;
     font-size: 400%;
-    /*font-family: "Times New Roman", Times, serif*/
     font-weight: bold;
 }
 
-.button {
+.button2 {
     text-align: center;
+    margin-left: 30 px;
+    margin-bottom: 2cm;
 }
